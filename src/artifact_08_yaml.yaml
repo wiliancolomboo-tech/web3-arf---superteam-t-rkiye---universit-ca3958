@@ -1,0 +1,23 @@
+version: "3.8"
+
+services:
+  arf-sve-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: arf-sve-orchestration-engine
+    restart: unless-stopped
+    environment:
+      - SOLANA_RPC_URL=https://api.devnet.solana.com
+      - PROGRAM_ID=ArfSVE1111111111111111111111111111111111111
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
+      - COMPLIANCE_EMAIL=risk-audits@arf.one
+      - PORT=8080
+    ports:
+      - "8080:8080"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"

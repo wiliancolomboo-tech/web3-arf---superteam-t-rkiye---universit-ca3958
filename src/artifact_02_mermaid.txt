@@ -1,0 +1,38 @@
+flowchart TD
+    subgraph ClientLayer["Licensed MSB / Institutional Client Layer"]
+        MSB[Institutional Treasury Portal]
+        ERP[Corporate ERP / Core Banking API]
+    end
+
+    subgraph Orchestration["Arf-SVE Enterprise Worker (Node.js/TS Engine)"]
+        Ingest[Transaction & Corridor Ingestion]
+        RiskEngine[Real-Time Risk & Margin Evaluator]
+        TxSigner[Enterprise Key Custody / KMS Signer]
+        AlertBus[Enterprise Notification Dispatcher]
+    end
+
+    subgraph SolanaOnChain["Solana Blockchain (Arf-SVE Anchor Program)"]
+        ConfigAccount["Global Protocol Config PDA"]
+        CreditFacility["Credit Facility Account PDA\n(Capacity, Utilization, Apr, Maturity)"]
+        CorridorVault["Corridor Vault PDA\n(SPL Token Vault USDC/EURC)"]
+        SettlementRecord["Deterministic Settlement Log PDA\n(Timestamp, FX Rate, Sequence ID)"]
+    end
+
+    subgraph EnterpriseServices["Enterprise Integration Endpoints"]
+        ResendAPI["Resend API\n(Proof-of-Settlement HTML/PDF Receipts)"]
+        SlackWebhook["Institutional Risk Desk\n(Slack / Discord Ops Alerting)"]
+        AuditStorage["Immutable Cloud S3 / IPFS\n(Audit Trail)"]
+    end
+
+    MSB -->|1. Request Credit Drawdown / Corridor Route| Ingest
+    ERP -->|1. Batch Settlement Instruction| Ingest
+    Ingest --> RiskEngine
+    RiskEngine -->|2. Verify Liquidity Limits| TxSigner
+    TxSigner -->|3. Invoke CPI: draw_down_and_settle| SolanaOnChain
+    SolanaOnChain -->|4. Validate Account State & Clock| CreditFacility
+    CreditFacility -->|5. Transfer Liquidity| CorridorVault
+    SolanaOnChain -->|6. Emit SettlementEvent| SettlementRecord
+    SettlementRecord -.->|7. Confirmed Commitment Event Stream| AlertBus
+    AlertBus -->|8. POST Transaction Summary| ResendAPI
+    AlertBus -->|9. Trigger Margin / Settlement Alert| SlackWebhook
+    AlertBus -->|10. Persist Proof Trace| AuditStorage

@@ -1,0 +1,9 @@
+{
+  "status": "UP",
+  "service": "arf-settlement-velocity-engine",
+  "solana_cluster": "devnet",
+  "current_slot": 298410291,
+  "resend_dispatcher": "HEALTHY",
+  "slack_dispatcher": "CONNECTED",
+  "uptime_seconds": 86400
+}
