@@ -1,0 +1,16 @@
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY relayer/package*.json ./
+RUN npm install
+COPY relayer/tsconfig.json ./
+COPY relayer/src ./src
+RUN npm run build
+
+FROM node:20-alpine
+WORKDIR /app
+COPY relayer/package*.json ./
+RUN npm install --only=production
+COPY --from=builder /app/dist ./dist
+ENV NODE_ENV=production
+EXPOSE 8080
+CMD ["node", "dist/index.js"]

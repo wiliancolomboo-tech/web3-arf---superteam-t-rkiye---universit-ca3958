@@ -1,0 +1,22 @@
+version: "3.8"
+
+services:
+  arf-clearing-engine:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: arf_clearing_engine
+    restart: always
+    environment:
+      - PORT=8080
+      - SOLANA_RPC_URL=https://api.devnet.solana.com
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - AUDIT_EMAIL=${AUDIT_EMAIL:-treasury-ops@arf.network}
+      - OPS_WEBHOOK_URL=${OPS_WEBHOOK_URL}
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "node", "-e", "process.exit(0)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

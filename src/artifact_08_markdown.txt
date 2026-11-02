@@ -1,0 +1,11 @@
+### Incident Response Matrix
+
+| Code / Symptom | Root Cause | Remediation Procedure |
+| :--- | :--- | :--- |
+| `CreditLimitExceeded` | Outstanding principal + drawdown exceeds limit | MSB Treasury must execute `repay_facility` or request credit line increase from Arf Underwriting. |
+| `PoolPaused` | Circuit breaker tripped by admin | Check RPC network health and contact Risk Committee to run `set_pool_pause(false)`. |
+| `Resend 429 RateLimit` | Email volume exceeded API threshold | Relayer queues unsent messages in memory buffer; automatically retries with exponential backoff. |
+| `MismatchedMint` | Provided token account does not match USDC | Verify mint address configured on target liquidity pool PDA. |
+
+### Healthcheck Endpoint
+The worker exposes `GET /health` responding with:

@@ -1,0 +1,5 @@
+RESEND_API_KEY=re_your_verified_enterprise_api_key
+SLACK_WEBHOOK_URL=https://api.example.com/webhooks/alerts/placeholder
+SOLANA_RPC_URL=https://api.devnet.solana.com
+PROGRAM_ID=<YOUR_DEPLOYED_PROGRAM_ID>
+TREASURY_EMAIL=cfo-desk@arf.one

@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  arfflow-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: arfflow-worker
+    restart: always
+    environment:
+      - PORT=8080
+      - SOLANA_RPC_URL=https://api.devnet.solana.com
+      - PROGRAM_ID=ArfF1ow111111111111111111111111111111111111
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - COMPLIANCE_EMAIL=risk-ops@arf.one
+      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
+    ports:
+      - "8080:8080"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"

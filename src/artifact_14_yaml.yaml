@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  arfflow-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: arfflow-worker
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - SOLANA_RPC_URL=https://api.devnet.solana.com
+      - PROGRAM_ID=Arf1111111111111111111111111111111111111111
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - CFO_NOTIFICATION_EMAIL=${CFO_NOTIFICATION_EMAIL}
+      - SLACK_SECURITY_WEBHOOK_URL=${SLACK_SECURITY_WEBHOOK_URL}
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 3

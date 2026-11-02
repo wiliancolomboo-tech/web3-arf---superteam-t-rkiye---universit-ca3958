@@ -1,0 +1,7 @@
+{
+  "status": "UP",
+  "protocol": "ArfFlow Core v1.0",
+  "activeCorridors": ["USD/TRY", "EUR/TRY", "USDC/FAST"],
+  "solanaRpcLatencyMs": 42,
+  "resendRelayReady": true
+}

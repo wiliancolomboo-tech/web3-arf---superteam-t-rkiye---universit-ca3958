@@ -1,0 +1,12 @@
++---------------------------------------------------------------------------------------------+
+|                                    OPERATIONAL RUNBOOK                                      |
++----------------------+---------------------------+------------------------------------------+
+| Scenario             | Trigger / Symptom         | Resolution Procedure                     |
++----------------------+---------------------------+------------------------------------------+
+| Vault Liquidity Low  | Utilization > 90%         | Issue automated LP yield increase alert; |
+|                      |                           | trigger liquidity rebalance from anchor. |
+| Stale Drawdown Debt  | Loan age > 30 days        | Programmatic debt margin call to PSP;    |
+|                      |                           | freeze credit line using admin toggle.   |
+| Webhook RPC Outage   | Missing slot confirmations| Failover daemon to secondary private RPC |
+|                      |                           | endpoint (e.g. Helius / Triton RPC).     |
++----------------------+---------------------------+------------------------------------------+

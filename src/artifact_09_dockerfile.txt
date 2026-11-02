@@ -1,0 +1,23 @@
+FROM node:20-slim AS builder
+
+WORKDIR /usr/src/app
+
+COPY package*.json ./
+COPY tsconfig.json ./
+RUN npm ci
+
+COPY relayer/ ./relayer/
+RUN npm run build || true
+
+FROM node:20-slim AS runner
+WORKDIR /usr/src/app
+
+ENV NODE_ENV=production
+COPY package*.json ./
+RUN npm ci --only=production
+
+COPY --from=builder /usr/src/app/relayer ./relayer
+COPY .env.example .env
+
+EXPOSE 8080
+CMD ["node", "relayer/cli.js", "healthcheck"]

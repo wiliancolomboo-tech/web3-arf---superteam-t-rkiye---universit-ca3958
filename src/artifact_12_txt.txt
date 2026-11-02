@@ -1,0 +1,9 @@
+Why @solana? Traditional finance takes T+2 to settle corridors. 
+
+With ArfCredit:
+1️⃣ On-demand USDC drawdown in 400ms
+2️⃣ Mathematical debt-ceilings & continuous per-second interest accrual
+3️⃣ Instant local payout & atomic repayment loop
+4️⃣ Real-time compliance streaming via @resend
+
+Capital efficiency: 99.2% 📈

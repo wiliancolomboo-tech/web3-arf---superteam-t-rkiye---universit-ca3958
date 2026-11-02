@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  arf-settler-daemon:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: arf-settler-service
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - SOLANA_RPC_URL=https://api.devnet.solana.com
+      - PROGRAM_ID=ArfSetTLer111111111111111111111111111111111
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
+      - COMPLIANCE_EMAIL=treasury-compliance@arf.one
+      - LOG_LEVEL=info
+      - PORT=8080
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./keys:/usr/src/app/keys:ro

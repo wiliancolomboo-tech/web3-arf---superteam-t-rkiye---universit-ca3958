@@ -1,0 +1,21 @@
+[toolchain]
+
+[features]
+seeds = true
+skip-lint = false
+
+[programs.localnet]
+arfflow_core = "Arf1111111111111111111111111111111111111111"
+
+[programs.devnet]
+arfflow_core = "Arf1111111111111111111111111111111111111111"
+
+[registry]
+url = "https://api.apr.dev"
+
+[provider]
+cluster = "Localnet"
+wallet = "~/.config/solana/id.json"
+
+[scripts]
+test = "yarn run ts-node node_modules/.bin/mocha -t 1000000 tests/**/*.ts"

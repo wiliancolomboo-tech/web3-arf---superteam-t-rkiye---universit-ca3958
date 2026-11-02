@@ -1,0 +1,32 @@
+flowchart TD
+    subgraph Institutional_Corridor["Licensed PSP / MTO Corridor (e.g. TR-EU Hub)"]
+        A[Treasury Operator / ERP] -->|1. Request Remittance Drawdown| B[Arf-Flow CLI / SDK Client]
+    end
+
+    subgraph Solana_Clearing_Engine["Solana Anchor On-Chain Clearinghouse Engine"]
+        B -->|2. Execute 'initialize_settlement_escrow'| C[Program: arf_flow]
+        C -->|3. Lock SPL USDC/EURC into PDA| D[Corridor Vault PDA]
+        C -->|4. Emit SettlementClaimInitiated Event| E[On-Chain Log Bus]
+    end
+
+    subgraph Offchain_Fiat_Rail["Local Fiat Banking Clearing (FAST / SEPA / EFT)"]
+        B -->|5. Disburse Local Fiat Currency| F[Local Bank Rail API]
+        F -->|6. Fiat Success + MT103 Attestation| G[Arf Authorized Clearing Relayer]
+    end
+
+    subgraph Enterprise_Relayer_Service["Arf-Flow Enterprise Relayer & Telemetry"]
+        E -.->|Listen via WebSocket / Geyser| G
+        G -->|7. Sign Ed25519 Attestation & Call 'finalize_settlement'| C
+        C -->|8. Release Collateral & Burn Debt Unit| D
+        G -->|9. Dispatch MT103 Email Proof| H[Resend Enterprise API]
+        G -->|10. Stream Treasury Audit Log| I[Slack / Corporate Webhook]
+    end
+
+    subgraph End_Recipients["Beneficiary & Compliance Audit"]
+        H --> J[Beneficiary / Corporate Auditor]
+        I --> K[Risk Management Dashboard]
+    end
+
+    style C fill:#14F195,stroke:#000,stroke-width:2px,color:#000
+    style D fill:#9945FF,stroke:#fff,stroke-width:2px,color:#fff
+    style G fill:#00C2FF,stroke:#000,stroke-width:2px,color:#000

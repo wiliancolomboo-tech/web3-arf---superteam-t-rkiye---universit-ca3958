@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  arfnexus-orchestrator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: arfnexus-keeper-engine
+    restart: always
+    environment:
+      - SOLANA_RPC_URL=https://api.devnet.solana.com
+      - PROGRAM_ID=ArfNexus11111111111111111111111111111111111
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
+      - TREASURY_ALERT_EMAIL=${TREASURY_ALERT_EMAIL:-treasury@arf.one}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"

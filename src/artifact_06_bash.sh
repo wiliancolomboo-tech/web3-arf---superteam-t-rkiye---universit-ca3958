@@ -1,17 +1,17 @@
-# 1. Clone repository and install dependencies
-git clone https://github.com/superteam-turkiye/arf-settlement-velocity-engine.git
-cd arf-settlement-velocity-engine
+# 1. Clone repository & install dependencies
+git clone https://github.com/superteam-turkey/arfflow-settlement.git
+cd arfflow-settlement
 yarn install
 
-# 2. Build the Anchor Solana Program
+# 2. Build Anchor smart contract & generate TypeScript IDL types
 anchor build
 
-# 3. Synchronize program ID across source and Anchor.toml
+# 3. Synchronize program keys
 anchor keys sync
 
-# 4. Deploy to Solana Devnet (ensure deployer has devnet SOL)
-solana airdrop 2 -u devnet
+# 4. Deploy to Solana Devnet / Testnet
+solana config set --url https://api.devnet.solana.com
 anchor deploy --provider.cluster devnet
 
-# 5. Execute 100% Passing Integration Test Suite
+# 5. Run the End-to-End Enterprise Test Suite
 anchor test

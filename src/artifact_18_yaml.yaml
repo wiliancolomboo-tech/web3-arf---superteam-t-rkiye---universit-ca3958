@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  arf-treasury-daemon:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: arf_settlement_orchestrator
+    restart: always
+    environment:
+      - SOLANA_RPC_URL=https://api.devnet.solana.com
+      - PROGRAM_ID=Arf1111111111111111111111111111111111111111
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
+      - OPERATOR_KEYPAIR_PATH=/run/secrets/operator_keypair.json
+    volumes:
+      - ./keypairs/operator.json:/run/secrets/operator_keypair.json:ro
+    healthcheck:
+      test: ["CMD-SHELL", "node -e 'console.log(process.uptime())'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"

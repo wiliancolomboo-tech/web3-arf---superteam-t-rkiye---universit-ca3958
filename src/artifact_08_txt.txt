@@ -1,0 +1,20 @@
+arfflow-protocol/
+├── Cargo.toml
+├── Anchor.toml
+├── Dockerfile
+├── docker-compose.yml
+├── .env.example
+├── README.md
+├── programs/
+│   └── arfflow-core/
+│       ├── Cargo.toml
+│       └── src/
+│           └── lib.rs
+├── client/
+│   ├── package.json
+│   ├── tsconfig.json
+│   └── src/
+│       ├── orchestrator.ts
+│       └── cli.ts
+└── tests/
+    └── arfflow-core.ts

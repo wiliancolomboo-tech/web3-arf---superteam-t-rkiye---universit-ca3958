@@ -1,0 +1,1 @@
+ts-node ./cli/admin.ts --action pause --pool <POOL_PDA>

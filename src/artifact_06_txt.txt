@@ -1,0 +1,6 @@
+---
+
+# 6. Sponsor Handover & Turnkey Operations
+
+### Step 1: Automated Local & Devnet Deployment
+To deploy this engine directly to Solana Devnet or Mainnet:

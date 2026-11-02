@@ -1,0 +1,10 @@
+client/
+├── package.json
+├── tsconfig.json
+├── src/
+│   ├── config.ts
+│   ├── notifications/
+│   │   ├── resendService.ts
+│   │   └── slackService.ts
+│   ├── listener.ts
+│   └── cli.ts

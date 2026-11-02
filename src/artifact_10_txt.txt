@@ -1,0 +1,8 @@
+GET /healthz -> 200 OK
+{
+  "status": "healthy",
+  "programId": "ARF1111111111111111111111111111111111111111",
+  "network": "devnet",
+  "rpcLatencyMs": 14,
+  "resendRelayer": "ready"
+}

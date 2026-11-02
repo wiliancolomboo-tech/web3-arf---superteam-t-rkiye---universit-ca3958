@@ -1,0 +1,9 @@
+SOLANA_RPC_URL=https://api.devnet.solana.com
+ARF_PROGRAM_ID=Arf1111111111111111111111111111111111111111
+ADMIN_KEYPAIR=./keys/admin.json
+BORROWER_KEYPAIR=./keys/borrower.json
+SETTLEMENT_MINT=4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU # Devnet USDC
+RESEND_API_KEY=re_123456789abcdef
+AUDIT_EMAIL=treasury@institutional-partner.com
+SLACK_WEBHOOK_URL=https://api.example.com/webhooks/alerts/placeholder
+PORT=8080

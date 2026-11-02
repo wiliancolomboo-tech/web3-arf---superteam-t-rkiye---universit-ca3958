@@ -1,23 +1,24 @@
-version: "3.8"
+version: '3.8'
 
 services:
-  arf-sve-worker:
+  arfflow-orchestrator:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: arf-sve-orchestration-engine
-    restart: unless-stopped
+    container_name: arfflow-orchestrator
+    restart: always
     environment:
+      - NODE_ENV=production
       - SOLANA_RPC_URL=https://api.devnet.solana.com
-      - PROGRAM_ID=ArfSVE1111111111111111111111111111111111111
+      - ARF_PROGRAM_ID=Arf1111111111111111111111111111111111111111
+      - ORCHESTRATOR_PRIVATE_KEY=${ORCHESTRATOR_PRIVATE_KEY}
       - RESEND_API_KEY=${RESEND_API_KEY}
       - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
-      - COMPLIANCE_EMAIL=risk-audits@arf.one
-      - PORT=8080
+      - COMPLIANCE_EMAIL=compliance@arf.one
     ports:
       - "8080:8080"
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "50m"
-        max-file: "5"
+    healthcheck:
+      test: ["CMD", "node", "-e", "process.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

@@ -1,0 +1,14 @@
++---------------------------------------------------------------------------------------+
+| ARFSTREAM OPERATIONAL RUNBOOK                                                         |
++---------------------+---------------------------------+-------------------------------+
+| Incidents           | Diagnostic Procedure            | Mitigation Action             |
++---------------------+---------------------------------+-------------------------------+
+| Drawdown Rejections | Inspect borrower PDA on-chain   | Renew KYB expiry via          |
+|                     | `solana account <CREDIT_LINE>`  | `register_borrower` call.     |
++---------------------+---------------------------------+-------------------------------+
+| High Latency Alerts | Query RPC Node slot drift:      | Fallback to dedicated Helius  |
+|                     | `curl -X POST $RPC_HTTP`        | or Triton institutional RPC.  |
++---------------------+---------------------------------+-------------------------------+
+| Emergency Default   | KYB Tier downgrade or sanctions | Execute `set_pool_freeze(true)`|
+|                     | match on Chainalysis            | to halt all pool disbursements|
++---------------------+---------------------------------+-------------------------------+

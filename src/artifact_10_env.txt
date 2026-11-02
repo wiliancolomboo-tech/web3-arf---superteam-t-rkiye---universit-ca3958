@@ -1,0 +1,6 @@
+SOLANA_RPC_URL=https://api.devnet.solana.com
+PROGRAM_ID=ArfFLoW111111111111111111111111111111111111
+UNDERWRITER_PRIVATE_KEY=[12,45,67,...]
+SLACK_WEBHOOK_URL=https://api.example.com/webhooks/alerts/placeholder
+RESEND_API_KEY=re_enterprise_token_here
+TREASURY_AUDIT_EMAIL=ops@arf.one

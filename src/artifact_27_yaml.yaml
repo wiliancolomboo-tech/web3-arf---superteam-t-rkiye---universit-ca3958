@@ -1,0 +1,25 @@
+version: "3.8"
+
+services:
+  clearstream-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: arf-clearstream-daemon
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - SOLANA_RPC=${SOLANA_RPC:-https://api.devnet.solana.com}
+      - PROGRAM_ID=${PROGRAM_ID:-ArfCLeaR11111111111111111111111111111111111}
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - EMAIL_SENDER=settlements@arf.one
+      - TREASURY_RECIPIENT_EMAIL=ops@partner-mto.com
+      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
+      - LOG_LEVEL=info
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"

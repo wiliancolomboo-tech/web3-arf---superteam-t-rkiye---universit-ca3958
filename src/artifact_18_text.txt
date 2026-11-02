@@ -1,0 +1,14 @@
+1/3 🌍 Cross-border settlements for Turkish PSPs & MTOs are broken by T+2 legacy rails and trapped nostro/vostro pre-funding capital. 
+
+Proud to introduce ArfFlow for the @ArfPay × @SuperteamTR University Track hackathon! 🇹🇷⚡ Built natively on @solana.
+
+2/3 💡 ArfFlow brings Arf’s institutional on-demand working capital vision on-chain:
+- Revolving USDC credit facilities for licensed PSPs
+- Sub-second delivery-vs-payment settlement on Solana
+- Automated audit receipts via @resend & operational webhooks
+- 0% prefunding overhead
+
+3/3 🔗 100% open-source, fully tested Anchor program, and complete enterprise orchestrator client ready for production clearance corridors.
+
+Checking out the future of institutional global payments on Solana! 🚀
+cc: @SuperteamTR @ArfPay @solana #Solana #Fintech #Web3

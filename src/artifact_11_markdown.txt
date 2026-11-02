@@ -1,0 +1,22 @@
+1/3
+Pre-funding correspondent bank accounts locks up $4,000,000,000,000 in trapped working capital worldwide.
+
+Introducing @ArfOne Streamline on @Solana:
+Sub-second institutional liquidity lines powering zero-balance cross-border settlements with atomic DvP & deterministic linear APR accrual. 🌐⚡
+
+2/3
+Why Solana for Institutional Credit?
+Speed is capital efficiency.
+Traditional wires settle in T+3. @ArfOne Stream on Solana executes drawdown, corridor disbursement, and repayment in <400ms slots.
+
+Featuring:
+🛡️ PDA-isolated corporate credit vaults
+⚡ Sub-bps real-time interest accrual
+🔌 Resend & Slack ops webhook pipeline
+
+3/3
+Built for the @SuperteamTR University Track hackathon.
+Ready for deployment: fully audited Anchor smart contracts, turnkey Docker containerization, and 100% test coverage.
+
+Repo & Enterprise Docs: https://github.com/superteam-turkiye/arf-stream-solana
+Let's eliminate pre-funding forever! 🇹🇷🚀 #Solana #Fintech #Arf #Web3

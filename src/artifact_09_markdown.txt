@@ -1,0 +1,13 @@
+### Incident Response & Operations Runbook
+
+1. **Credit Freeze Procedure (Emergency Stop):**
+   - In the event of an MTO fiat rail disruption, call:
+     `solana program execute freeze_credit_line <BORROWER_PUBKEY>` via the Risk Admin multisig.
+   
+2. **Prometheus / Healthcheck Monitoring Endpoint:**
+   - The service exposes `/healthz` on port 8080.
+   - Status 200 checks Solana RPC latency (< 800ms) and pending transaction queues.
+
+3. **Log Rotation & Audit Ingestion:**
+   - Structured JSON logs output to `stdout` are ingested by AWS CloudWatch / Datadog agents:
+     `{"level":"INFO","event":"DRAWDOWN_EXECUTED","tx":"5xG9...","time":"2025-02-15T12:00:00Z"}`

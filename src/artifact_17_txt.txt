@@ -1,0 +1,5 @@
+Cross-border payments trap over $4 TRILLION in idle nostro/vostro accounts across global banks. 
+
+Building with @ArfOfficial × @SuperteamTR, we engineered #ArfFlow: The first institutional working-capital & atomic liquidity settlement protocol on @solana. 
+
+Here is how we eliminate pre-funding forever

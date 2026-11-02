@@ -1,0 +1,3 @@
+By unlocking dormant capital on @solana, ArfFlow empowers licensed fintechs across Türkiye and global corridors to operate with 0% pre-funding friction.
+
+Full open-source repo, test matrix, and Docker architecture ready for mainnet rollout! 🇹🇷🚀 #Solana #SuperteamTR #Arf (3/3)

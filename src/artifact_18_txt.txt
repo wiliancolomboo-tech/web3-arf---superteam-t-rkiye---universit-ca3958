@@ -1,0 +1,9 @@
+Why Solana? Sub-second finality + 400ms slots.
+
+ArfFlow executes:
+ Dynamic risk-adjusted credit lines (USDC/EURC)
+ PDA-driven non-custodial capital vaults
+ Real-time per-slot interest accrual & circuit breakers
+ Enterprise-grade notification loop via @resend & Webhooks
+
+Zero pre-funding, zero FX settlement drag.

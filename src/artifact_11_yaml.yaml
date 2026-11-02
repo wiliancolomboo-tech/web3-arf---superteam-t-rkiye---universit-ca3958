@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  arfflow-telemetry:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: arfflow_orchestrator
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - SOLANA_RPC_URL=https://api.devnet.solana.com
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
+      - CFO_AUDIT_EMAIL=treasury@licensed-mto.com
+    ports:
+      - "8080:8080"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"

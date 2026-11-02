@@ -1,0 +1,27 @@
+sequenceDiagram
+    autonumber
+    participant MSB as MSB FinTech Gateway
+    participant CLI as ArfFlow Daemon (Node.js)
+    participant Program as ArfFlow Anchor Program
+    participant Vault as Solana Token Vaults (SPL)
+    participant Resend as Resend Enterprise API
+    participant Slack as Institutional Ops Slack
+
+    Note over MSB, Program: 1. Credit Facility Underwriting
+    MSB->>CLI: Request Drawdown (100,000 USDC)
+    CLI->>Program: execute_drawdown(100_000_000_000)
+    Program->>Program: Verify Authority, Limits, & Collateral Health Ratio
+    Program->>Vault: Transfer 100,000 USDC from Pool to MSB Disbursal Vault
+    Program-->>CLI: Emit DrawdownEvent(msb, amount, timestamp, interest_index)
+
+    Note over CLI, Slack: 2. Real-Time Telemetry & Enterprise Notifications
+    CLI->>Resend: POST /emails (Disbursal Notice + Proof-of-Reserve Anchor)
+    Resend-->>MSB: Deliver Encrypted Institutional PDF/Email Receipt
+    CLI->>Slack: Webhook: Drawdown Cleared (Block 289110291, TxHash: 5K8...)
+
+    Note over MSB, Program: 3. Cross-Border Payout & Instant Repayment
+    MSB->>CLI: Initiate Principal + Yield Repayment
+    CLI->>Program: execute_repay(principal + accrued_yield)
+    Program->>Vault: Return Principal to LP Pool + Accrue Protocol Revenue
+    Program-->>CLI: Emit RepaymentEvent(msb, net_yield, settled_slot)
+    CLI->>Slack: Webhook: Credit Line Restored, Capital Idle & Earning

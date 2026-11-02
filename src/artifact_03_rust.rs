@@ -1,291 +1,206 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 
-declare_id!("ArfSVE1111111111111111111111111111111111111");
-
-pub const SECONDS_PER_YEAR: u64 = 31_536_000;
-pub const BPS_DIVISOR: u128 = 10_000;
-pub const MAX_BPS: u16 = 2_500; // Max 25% APR
+declare_id!("ArfF1ow111111111111111111111111111111111111");
 
 #[program]
-pub mod arf_sve {
+pub mod arf_flow {
     use super::*;
 
-    pub fn initialize_corridor_protocol(
-        ctx: Context<InitializeCorridorProtocol>,
-        admin_fee_bps: u16,
-    ) -> Result<()> {
-        require!(admin_fee_bps <= 500, ArfError::FeeExceedsCap); // Max 5% protocol fee
-        let config = &mut ctx.accounts.config;
-        config.admin = ctx.accounts.admin.key();
-        config.treasury_mint = ctx.accounts.treasury_mint.key();
-        config.treasury_vault = ctx.accounts.treasury_vault.key();
-        config.admin_fee_bps = admin_fee_bps;
-        config.total_credit_allocated = 0;
-        config.total_credit_drawn = 0;
-        config.is_paused = false;
-        config.bump = ctx.bumps.config;
-        config.vault_bump = ctx.bumps.treasury_vault;
-
-        emit!(ProtocolInitializedEvent {
-            admin: config.admin,
-            treasury_mint: config.treasury_mint,
-            admin_fee_bps,
-            timestamp: Clock::get()?.unix_timestamp,
-        });
-
-        Ok(())
-    }
-
-    pub fn open_credit_facility(
-        ctx: Context<OpenCreditFacility>,
+    /// Initialize a corporate liquidity pool for a specific corridor (e.g., EUR/TRY or USD/BRL).
+    pub fn initialize_pool(
+        ctx: Context<InitializePool>,
+        corridor_id: String,
         credit_limit: u64,
-        apr_bps: u16,
-        corridor_id: [u8; 16],
+        settlement_timeout_seconds: i64,
     ) -> Result<()> {
-        require!(credit_limit > 0, ArfError::ZeroCreditLimit);
-        require!(apr_bps <= MAX_BPS, ArfError::InterestRateExceedsCap);
+        require!(corridor_id.len() <= 32, ArfError::CorridorIdTooLong);
+        require!(credit_limit > 0, ArfError::InvalidCreditLimit);
+        require!(settlement_timeout_seconds >= 60, ArfError::InvalidTimeout);
 
-        let facility = &mut ctx.accounts.facility;
-        let clock = Clock::get()?;
+        let pool = &mut ctx.accounts.pool;
+        pool.admin = ctx.accounts.admin.key();
+        pool.clearing_authority = ctx.accounts.clearing_authority.key();
+        pool.mint = ctx.accounts.mint.key();
+        pool.vault = ctx.accounts.vault.key();
+        pool.corridor_id = corridor_id;
+        pool.credit_limit = credit_limit;
+        pool.current_borrowed = 0;
+        pool.settlement_timeout_seconds = settlement_timeout_seconds;
+        pool.is_frozen = false;
+        pool.bump = ctx.bumps.pool;
+        pool.vault_bump = ctx.bumps.vault;
 
-        facility.borrower = ctx.accounts.borrower.key();
-        facility.corridor_id = corridor_id;
-        facility.credit_limit = credit_limit;
-        facility.current_principal = 0;
-        facility.accrued_interest = 0;
-        facility.last_accrual_timestamp = clock.unix_timestamp;
-        facility.apr_bps = apr_bps;
-        facility.is_active = true;
-        facility.bump = ctx.bumps.facility;
-
-        let config = &mut ctx.accounts.config;
-        config.total_credit_allocated = config
-            .total_credit_allocated
-            .checked_add(credit_limit)
-            .ok_or(ArfError::MathOverflow)?;
-
-        emit!(CreditFacilityOpenedEvent {
-            borrower: facility.borrower,
-            corridor_id,
+        emit!(PoolInitializedEvent {
+            pool: pool.key(),
+            corridor_id: pool.corridor_id.clone(),
             credit_limit,
-            apr_bps,
-            timestamp: clock.unix_timestamp,
+            clearing_authority: pool.clearing_authority,
         });
 
         Ok(())
     }
 
-    pub fn draw_down_and_settle(
-        ctx: Context<DrawDownAndSettle>,
-        amount: u64,
-        external_sequence_id: [u8; 32],
-    ) -> Result<()> {
-        require!(!ctx.accounts.config.is_paused, ArfError::ProtocolPaused);
+    /// Deposit institutional liquidity into the corridor vault.
+    pub fn deposit_liquidity(ctx: Context<DepositLiquidity>, amount: u64) -> Result<()> {
         require!(amount > 0, ArfError::InvalidAmount);
+        require!(!ctx.accounts.pool.is_frozen, ArfError::PoolFrozen);
 
-        let clock = Clock::get()?;
-        let facility = &mut ctx.accounts.facility;
-        require!(facility.is_active, ArfError::FacilityInactive);
+        let cpi_accounts = Transfer {
+            from: ctx.accounts.funder_token_account.to_account_info(),
+            to: ctx.accounts.vault.to_account_info(),
+            authority: ctx.accounts.funder.to_account_info(),
+        };
+        let cpi_ctx = CpiContext::new(ctx.accounts.token_program.to_account_info(), cpi_accounts);
+        token::transfer(cpi_ctx, amount)?;
 
-        // 1. Calculate continuous linear interest accrual
-        let elapsed_seconds = (clock.unix_timestamp)
-            .checked_sub(facility.last_accrual_timestamp)
-            .ok_or(ArfError::InvalidTimestamp)?;
+        emit!(LiquidityDepositedEvent {
+            pool: ctx.accounts.pool.key(),
+            funder: ctx.accounts.funder.key(),
+            amount,
+        });
 
-        if elapsed_seconds > 0 && facility.current_principal > 0 {
-            let incremental_interest = (facility.current_principal as u128)
-                .checked_mul(facility.apr_bps as u128)
-                .ok_or(ArfError::MathOverflow)?
-                .checked_mul(elapsed_seconds as u128)
-                .ok_or(ArfError::MathOverflow)?
-                .checked_div(BPS_DIVISOR)
-                .ok_or(ArfError::MathOverflow)?
-                .checked_div(SECONDS_PER_YEAR as u128)
-                .ok_or(ArfError::MathOverflow)? as u64;
+        Ok(())
+    }
 
-            facility.accrued_interest = facility
-                .accrued_interest
-                .checked_add(incremental_interest)
-                .ok_or(ArfError::MathOverflow)?;
-        }
-        facility.last_accrual_timestamp = clock.unix_timestamp;
-
-        // 2. Validate Available Line of Credit Capacity
-        let total_owed = facility
-            .current_principal
-            .checked_add(facility.accrued_interest)
-            .ok_or(ArfError::MathOverflow)?;
-
-        let prospective_obligation = total_owed
-            .checked_add(amount)
-            .ok_or(ArfError::MathOverflow)?;
-
+    /// Initiate a settlement drawdown. Transfers tokens to escrow PDA until off-chain fiat settlement attestation.
+    pub fn initiate_settlement(
+        ctx: Context<InitiateSettlement>,
+        settlement_id: [u8; 32],
+        amount: u64,
+    ) -> Result<()> {
+        let pool = &mut ctx.accounts.pool;
+        require!(!pool.is_frozen, ArfError::PoolFrozen);
+        require!(amount > 0, ArfError::InvalidAmount);
         require!(
-            prospective_obligation <= facility.credit_limit,
+            pool.current_borrowed.checked_add(amount).ok_or(ArfError::MathOverflow)? <= pool.credit_limit,
             ArfError::CreditLimitExceeded
         );
 
-        facility.current_principal = facility
-            .current_principal
+        let clock = Clock::get()?;
+        let settlement = &mut ctx.accounts.settlement_record;
+        settlement.pool = pool.key();
+        settlement.corridor_borrower = ctx.accounts.borrower.key();
+        settlement.destination_account = ctx.accounts.destination_token_account.key();
+        settlement.settlement_id = settlement_id;
+        settlement.amount = amount;
+        settlement.timestamp_initiated = clock.unix_timestamp;
+        settlement.timeout_deadline = clock
+            .unix_timestamp
+            .checked_add(pool.settlement_timeout_seconds)
+            .ok_or(ArfError::MathOverflow)?;
+        settlement.status = SettlementStatus::Pending;
+        settlement.bump = ctx.bumps.settlement_record;
+
+        pool.current_borrowed = pool
+            .current_borrowed
             .checked_add(amount)
             .ok_or(ArfError::MathOverflow)?;
 
-        let config = &mut ctx.accounts.config;
-        config.total_credit_drawn = config
-            .total_credit_drawn
-            .checked_add(amount)
-            .ok_or(ArfError::MathOverflow)?;
+        emit!(SettlementInitiatedEvent {
+            settlement_id,
+            pool: pool.key(),
+            borrower: ctx.accounts.borrower.key(),
+            amount,
+            deadline: settlement.timeout_deadline,
+        });
 
-        // 3. Execute CPI Transfer from Protocol Treasury Vault to Destination Recipient
+        Ok(())
+    }
+
+    /// Clearing authority attests fiat delivery on external rails, releasing liquidity to the borrower.
+    pub fn finalize_settlement(
+        ctx: Context<FinalizeSettlement>,
+        settlement_id: [u8; 32],
+        offchain_reference_hash: [u8; 32],
+    ) -> Result<()> {
+        let pool = &ctx.accounts.pool;
+        let settlement = &mut ctx.accounts.settlement_record;
+
+        require!(settlement.status == SettlementStatus::Pending, ArfError::InvalidSettlementStatus);
+        require!(settlement.settlement_id == settlement_id, ArfError::MismatchedSettlementId);
+
+        let clock = Clock::get()?;
+        require!(clock.unix_timestamp <= settlement.timeout_deadline, ArfError::SettlementExpired);
+
+        settlement.status = SettlementStatus::Settled;
+        settlement.offchain_reference_hash = offchain_reference_hash;
+
+        // Transfer funds from Vault PDA to Borrower Destination
+        let pool_key = pool.key();
         let seeds = &[
-            b"treasury_vault".as_ref(),
-            config.to_account_info().key.as_ref(),
-            &[config.vault_bump],
+            b"vault".as_ref(),
+            pool_key.as_ref(),
+            &[pool.vault_bump],
         ];
         let signer = &[&seeds[..]];
 
         let cpi_accounts = Transfer {
-            from: ctx.accounts.treasury_vault.to_account_info(),
-            to: ctx.accounts.recipient_token_account.to_account_info(),
-            authority: ctx.accounts.treasury_vault.to_account_info(),
+            from: ctx.accounts.vault.to_account_info(),
+            to: ctx.accounts.destination_token_account.to_account_info(),
+            authority: ctx.accounts.vault.to_account_info(),
         };
         let cpi_ctx = CpiContext::new_with_signer(
             ctx.accounts.token_program.to_account_info(),
             cpi_accounts,
             signer,
         );
-        token::transfer(cpi_ctx, amount)?;
+        token::transfer(cpi_ctx, settlement.amount)?;
 
-        // 4. Populate Settlement Audit Record PDA
-        let record = &mut ctx.accounts.settlement_record;
-        record.facility = facility.key();
-        record.amount = amount;
-        record.recipient = ctx.accounts.recipient_token_account.key();
-        record.sequence_id = external_sequence_id;
-        record.timestamp = clock.unix_timestamp;
-        record.bump = ctx.bumps.settlement_record;
-
-        emit!(SettlementExecutedEvent {
-            borrower: facility.borrower,
-            facility: facility.key(),
-            recipient: record.recipient,
-            amount,
-            sequence_id: external_sequence_id,
-            timestamp: clock.unix_timestamp,
+        emit!(SettlementFinalizedEvent {
+            settlement_id,
+            pool: pool.key(),
+            amount: settlement.amount,
+            offchain_reference_hash,
         });
 
         Ok(())
     }
 
-    pub fn repay_credit_facility(ctx: Context<RepayCreditFacility>, amount: u64) -> Result<()> {
+    /// Repay borrowed capital into the pool, refreshing the available credit line.
+    pub fn repay_credit(ctx: Context<RepayCredit>, amount: u64) -> Result<()> {
         require!(amount > 0, ArfError::InvalidAmount);
-        let clock = Clock::get()?;
-        let facility = &mut ctx.accounts.facility;
+        let pool = &mut ctx.accounts.pool;
 
-        // 1. Accrue remaining interest to this exact second
-        let elapsed_seconds = (clock.unix_timestamp)
-            .checked_sub(facility.last_accrual_timestamp)
-            .ok_or(ArfError::InvalidTimestamp)?;
-
-        if elapsed_seconds > 0 && facility.current_principal > 0 {
-            let incremental_interest = (facility.current_principal as u128)
-                .checked_mul(facility.apr_bps as u128)
-                .ok_or(ArfError::MathOverflow)?
-                .checked_mul(elapsed_seconds as u128)
-                .ok_or(ArfError::MathOverflow)?
-                .checked_div(BPS_DIVISOR)
-                .ok_or(ArfError::MathOverflow)?
-                .checked_div(SECONDS_PER_YEAR as u128)
-                .ok_or(ArfError::MathOverflow)? as u64;
-
-            facility.accrued_interest = facility
-                .accrued_interest
-                .checked_add(incremental_interest)
-                .ok_or(ArfError::MathOverflow)?;
-        }
-        facility.last_accrual_timestamp = clock.unix_timestamp;
-
-        // 2. Cascade repayment: First against accrued interest, second against principal
-        let mut remainder = amount;
-        let mut interest_repaid = 0u64;
-        let mut principal_repaid = 0u64;
-
-        if facility.accrued_interest > 0 {
-            if remainder >= facility.accrued_interest {
-                interest_repaid = facility.accrued_interest;
-                remainder = remainder
-                    .checked_sub(facility.accrued_interest)
-                    .ok_or(ArfError::MathOverflow)?;
-                facility.accrued_interest = 0;
-            } else {
-                interest_repaid = remainder;
-                facility.accrued_interest = facility
-                    .accrued_interest
-                    .checked_sub(remainder)
-                    .ok_or(ArfError::MathOverflow)?;
-                remainder = 0;
-            }
-        }
-
-        if remainder > 0 {
-            if remainder >= facility.current_principal {
-                principal_repaid = facility.current_principal;
-                facility.current_principal = 0;
-            } else {
-                principal_repaid = remainder;
-                facility.current_principal = facility
-                    .current_principal
-                    .checked_sub(remainder)
-                    .ok_or(ArfError::MathOverflow)?;
-            }
-        }
-
-        let actual_total_repayment = interest_repaid
-            .checked_add(principal_repaid)
-            .ok_or(ArfError::MathOverflow)?;
-
-        require!(actual_total_repayment > 0, ArfError::NoDebtToRepay);
-
-        // Update protocol metrics
-        let config = &mut ctx.accounts.config;
-        config.total_credit_drawn = config
-            .total_credit_drawn
-            .saturating_sub(principal_repaid);
-
-        // 3. Transfer repayment funds from payer to protocol treasury vault
         let cpi_accounts = Transfer {
             from: ctx.accounts.payer_token_account.to_account_info(),
-            to: ctx.accounts.treasury_vault.to_account_info(),
+            to: ctx.accounts.vault.to_account_info(),
             authority: ctx.accounts.payer.to_account_info(),
         };
-        let cpi_ctx = CpiContext::new(
-            ctx.accounts.token_program.to_account_info(),
-            cpi_accounts,
-        );
-        token::transfer(cpi_ctx, actual_total_repayment)?;
+        let cpi_ctx = CpiContext::new(ctx.accounts.token_program.to_account_info(), cpi_accounts);
+        token::transfer(cpi_ctx, amount)?;
 
-        emit!(FacilityRepaidEvent {
-            facility: facility.key(),
-            borrower: facility.borrower,
-            interest_paid: interest_repaid,
-            principal_paid: principal_repaid,
-            remaining_principal: facility.current_principal,
-            remaining_interest: facility.accrued_interest,
-            timestamp: clock.unix_timestamp,
+        pool.current_borrowed = pool.current_borrowed.saturating_sub(amount);
+
+        emit!(CreditRepaidEvent {
+            pool: pool.key(),
+            payer: ctx.accounts.payer.key(),
+            amount,
+            current_borrowed: pool.current_borrowed,
         });
 
         Ok(())
     }
 
-    pub fn set_protocol_pause(ctx: Context<AdminOnly>, pause: bool) -> Result<()> {
-        let config = &mut ctx.accounts.config;
-        config.is_paused = pause;
-        emit!(ProtocolPauseUpdatedEvent {
-            is_paused: pause,
-            admin: ctx.accounts.admin.key(),
-            timestamp: Clock::get()?.unix_timestamp,
+    /// Cancel expired settlement claim and recover reserved credit allowance.
+    pub fn cancel_expired_settlement(ctx: Context<CancelExpiredSettlement>) -> Result<()> {
+        let pool = &mut ctx.accounts.pool;
+        let settlement = &mut ctx.accounts.settlement_record;
+
+        require!(settlement.status == SettlementStatus::Pending, ArfError::InvalidSettlementStatus);
+
+        let clock = Clock::get()?;
+        require!(clock.unix_timestamp > settlement.timeout_deadline, ArfError::SettlementNotExpired);
+
+        settlement.status = SettlementStatus::Cancelled;
+        pool.current_borrowed = pool.current_borrowed.saturating_sub(settlement.amount);
+
+        emit!(SettlementCancelledEvent {
+            settlement_id: settlement.settlement_id,
+            pool: pool.key(),
+            reclaimed_amount: settlement.amount,
         });
+
         Ok(())
     }
 }
@@ -295,282 +210,311 @@ pub mod arf_sve {
 // -----------------------------------------------------------------------------
 
 #[derive(Accounts)]
-pub struct InitializeCorridorProtocol<'info> {
-    #[account(
-        init,
-        payer = admin,
-        space = 8 + ProtocolConfig::LEN,
-        seeds = [b"protocol_config"],
-        bump
-    )]
-    pub config: Account<'info, ProtocolConfig>,
-
-    pub treasury_mint: Account<'info, Mint>,
-
-    #[account(
-        init,
-        payer = admin,
-        seeds = [b"treasury_vault", config.key().as_ref()],
-        bump,
-        token::mint = treasury_mint,
-        token::authority = treasury_vault
-    )]
-    pub treasury_vault: Account<'info, TokenAccount>,
-
+#[instruction(corridor_id: String)]
+pub struct InitializePool<'info> {
     #[account(mut)]
     pub admin: Signer<'info>,
-    pub token_program: Program<'info, Token>,
+
+    /// CHECK: Clearing authority verified via signature check
+    pub clearing_authority: AccountInfo<'info>,
+
+    pub mint: Account<'info, Mint>,
+
+    #[account(
+        init,
+        payer = admin,
+        space = 8 + Pool::INIT_SPACE,
+        seeds = [b"pool", corridor_id.as_bytes(), mint.key().as_ref()],
+        bump
+    )]
+    pub pool: Account<'info, Pool>,
+
+    #[account(
+        init,
+        payer = admin,
+        seeds = [b"vault", pool.key().as_ref()],
+        bump,
+        token::mint = mint,
+        token::authority = vault
+    )]
+    pub vault: Account<'info, TokenAccount>,
+
     pub system_program: Program<'info, System>,
+    pub token_program: Program<'info, Token>,
     pub rent: Sysvar<'info, Rent>,
 }
 
 #[derive(Accounts)]
-#[instruction(credit_limit: u64, apr_bps: u16, corridor_id: [u8; 16])]
-pub struct OpenCreditFacility<'info> {
+pub struct DepositLiquidity<'info> {
+    #[account(mut)]
+    pub funder: Signer<'info>,
+
     #[account(
         mut,
-        seeds = [b"protocol_config"],
-        bump = config.bump,
-        has_one = admin @ ArfError::UnauthorizedAdmin
+        has_one = vault,
+        has_one = mint
     )]
-    pub config: Account<'info, ProtocolConfig>,
+    pub pool: Account<'info, Pool>,
 
-    /// CHECK: The institutional recipient/borrower authorized by admin
-    pub borrower: AccountInfo<'info>,
+    pub mint: Account<'info, Mint>,
 
     #[account(
-        init,
-        payer = admin,
-        space = 8 + CreditFacility::LEN,
-        seeds = [b"facility", config.key().as_ref(), borrower.key().as_ref(), &corridor_id],
-        bump
+        mut,
+        constraint = funder_token_account.mint == mint.key() @ ArfError::InvalidMint,
+        constraint = funder_token_account.owner == funder.key() @ ArfError::InvalidOwner
     )]
-    pub facility: Account<'info, CreditFacility>,
+    pub funder_token_account: Account<'info, TokenAccount>,
 
     #[account(mut)]
-    pub admin: Signer<'info>,
-    pub system_program: Program<'info, System>,
+    pub vault: Account<'info, TokenAccount>,
+
+    pub token_program: Program<'info, Token>,
 }
 
 #[derive(Accounts)]
-#[instruction(amount: u64, external_sequence_id: [u8; 32])]
-pub struct DrawDownAndSettle<'info> {
-    #[account(
-        mut,
-        seeds = [b"protocol_config"],
-        bump = config.bump
-    )]
-    pub config: Account<'info, ProtocolConfig>,
+#[instruction(settlement_id: [u8; 32])]
+pub struct InitiateSettlement<'info> {
+    #[account(mut)]
+    pub borrower: Signer<'info>,
 
     #[account(
         mut,
-        seeds = [b"facility", config.key().as_ref(), borrower.key().as_ref(), &facility.corridor_id],
-        bump = facility.bump,
-        has_one = borrower @ ArfError::UnauthorizedBorrower
+        has_one = vault
     )]
-    pub facility: Account<'info, CreditFacility>,
+    pub pool: Account<'info, Pool>,
 
-    #[account(
-        mut,
-        seeds = [b"treasury_vault", config.key().as_ref()],
-        bump = config.vault_bump
-    )]
-    pub treasury_vault: Account<'info, TokenAccount>,
-
-    #[account(
-        mut,
-        constraint = recipient_token_account.mint == config.treasury_mint @ ArfError::InvalidMint
-    )]
-    pub recipient_token_account: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub vault: Account<'info, TokenAccount>,
 
     #[account(
         init,
         payer = borrower,
-        space = 8 + SettlementRecord::LEN,
-        seeds = [b"settlement_record", facility.key().as_ref(), &external_sequence_id],
+        space = 8 + SettlementRecord::INIT_SPACE,
+        seeds = [b"settlement", pool.key().as_ref(), settlement_id.as_ref()],
         bump
     )]
     pub settlement_record: Account<'info, SettlementRecord>,
 
-    #[account(mut)]
-    pub borrower: Signer<'info>,
-    pub token_program: Program<'info, Token>,
+    #[account(
+        constraint = destination_token_account.mint == pool.mint @ ArfError::InvalidMint
+    )]
+    pub destination_token_account: Account<'info, TokenAccount>,
+
     pub system_program: Program<'info, System>,
+    pub token_program: Program<'info, Token>,
 }
 
 #[derive(Accounts)]
-pub struct RepayCreditFacility<'info> {
+#[instruction(settlement_id: [u8; 32])]
+pub struct FinalizeSettlement<'info> {
     #[account(
-        mut,
-        seeds = [b"protocol_config"],
-        bump = config.bump
+        constraint = clearing_authority.key() == pool.clearing_authority @ ArfError::UnauthorizedClearing
     )]
-    pub config: Account<'info, ProtocolConfig>,
+    pub clearing_authority: Signer<'info>,
+
+    #[account(
+        has_one = vault,
+        has_one = clearing_authority
+    )]
+    pub pool: Account<'info, Pool>,
 
     #[account(
         mut,
-        seeds = [b"facility", config.key().as_ref(), facility.borrower.key().as_ref(), &facility.corridor_id],
-        bump = facility.bump
+        seeds = [b"settlement", pool.key().as_ref(), settlement_id.as_ref()],
+        bump = settlement_record.bump
     )]
-    pub facility: Account<'info, CreditFacility>,
+    pub settlement_record: Account<'info, SettlementRecord>,
+
+    #[account(mut)]
+    pub vault: Account<'info, TokenAccount>,
 
     #[account(
         mut,
-        seeds = [b"treasury_vault", config.key().as_ref()],
-        bump = config.vault_bump
+        constraint = destination_token_account.key() == settlement_record.destination_account @ ArfError::InvalidDestination
     )]
-    pub treasury_vault: Account<'info, TokenAccount>,
+    pub destination_token_account: Account<'info, TokenAccount>,
+
+    pub token_program: Program<'info, Token>,
+}
+
+#[derive(Accounts)]
+pub struct RepayCredit<'info> {
+    #[account(mut)]
+    pub payer: Signer<'info>,
 
     #[account(
         mut,
-        constraint = payer_token_account.mint == config.treasury_mint @ ArfError::InvalidMint
+        has_one = vault,
+        has_one = mint
+    )]
+    pub pool: Account<'info, Pool>,
+
+    pub mint: Account<'info, Mint>,
+
+    #[account(
+        mut,
+        constraint = payer_token_account.mint == mint.key() @ ArfError::InvalidMint,
+        constraint = payer_token_account.owner == payer.key() @ ArfError::InvalidOwner
     )]
     pub payer_token_account: Account<'info, TokenAccount>,
 
     #[account(mut)]
-    pub payer: Signer<'info>,
+    pub vault: Account<'info, TokenAccount>,
+
     pub token_program: Program<'info, Token>,
 }
 
 #[derive(Accounts)]
-pub struct AdminOnly<'info> {
+pub struct CancelExpiredSettlement<'info> {
+    #[account(mut)]
+    pub caller: Signer<'info>,
+
     #[account(
         mut,
-        seeds = [b"protocol_config"],
-        bump = config.bump,
-        has_one = admin @ ArfError::UnauthorizedAdmin
+        has_one = vault
     )]
-    pub config: Account<'info, ProtocolConfig>,
-    pub admin: Signer<'info>,
+    pub pool: Account<'info, Pool>,
+
+    #[account(
+        mut,
+        has_one = pool,
+        seeds = [b"settlement", pool.key().as_ref(), settlement_record.settlement_id.as_ref()],
+        bump = settlement_record.bump
+    )]
+    pub settlement_record: Account<'info, SettlementRecord>,
+
+    #[account(mut)]
+    pub vault: Account<'info, TokenAccount>,
 }
 
 // -----------------------------------------------------------------------------
-// STATE SCHEMAS
+// DATA STATE STRUCTS
 // -----------------------------------------------------------------------------
 
 #[account]
-pub struct ProtocolConfig {
-    pub admin: Pubkey,                // 32
-    pub treasury_mint: Pubkey,        // 32
-    pub treasury_vault: Pubkey,       // 32
-    pub total_credit_allocated: u64,  // 8
-    pub total_credit_drawn: u64,      // 8
-    pub admin_fee_bps: u16,           // 2
-    pub is_paused: bool,              // 1
-    pub bump: u8,                     // 1
-    pub vault_bump: u8,               // 1
-}
-
-impl ProtocolConfig {
-    pub const LEN: usize = 32 + 32 + 32 + 8 + 8 + 2 + 1 + 1 + 1;
-}
-
-#[account]
-pub struct CreditFacility {
-    pub borrower: Pubkey,             // 32
-    pub corridor_id: [u8; 16],        // 16
-    pub credit_limit: u64,            // 8
-    pub current_principal: u64,       // 8
-    pub accrued_interest: u64,        // 8
-    pub last_accrual_timestamp: i64,  // 8
-    pub apr_bps: u16,                 // 2
-    pub is_active: bool,              // 1
-    pub bump: u8,                     // 1
-}
-
-impl CreditFacility {
-    pub const LEN: usize = 32 + 16 + 8 + 8 + 8 + 8 + 2 + 1 + 1;
-}
-
-#[account]
-pub struct SettlementRecord {
-    pub facility: Pubkey,             // 32
-    pub recipient: Pubkey,            // 32
-    pub amount: u64,                  // 8
-    pub sequence_id: [u8; 32],        // 32
-    pub timestamp: i64,               // 8
-    pub bump: u8,                     // 1
-}
-
-impl SettlementRecord {
-    pub const LEN: usize = 32 + 32 + 8 + 32 + 8 + 1;
-}
-
-// -----------------------------------------------------------------------------
-// EVENTS & ERRORS
-// -----------------------------------------------------------------------------
-
-#[event]
-pub struct ProtocolInitializedEvent {
+#[derive(InitSpace)]
+pub struct Pool {
     pub admin: Pubkey,
-    pub treasury_mint: Pubkey,
-    pub admin_fee_bps: u16,
-    pub timestamp: i64,
-}
-
-#[event]
-pub struct CreditFacilityOpenedEvent {
-    pub borrower: Pubkey,
-    pub corridor_id: [u8; 16],
+    pub clearing_authority: Pubkey,
+    pub mint: Pubkey,
+    pub vault: Pubkey,
+    #[max_len(32)]
+    pub corridor_id: String,
     pub credit_limit: u64,
-    pub apr_bps: u16,
-    pub timestamp: i64,
+    pub current_borrowed: u64,
+    pub settlement_timeout_seconds: i64,
+    pub is_frozen: bool,
+    pub bump: u8,
+    pub vault_bump: u8,
 }
 
-#[event]
-pub struct SettlementExecutedEvent {
-    pub borrower: Pubkey,
-    pub facility: Pubkey,
-    pub recipient: Pubkey,
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq, InitSpace)]
+pub enum SettlementStatus {
+    Pending,
+    Settled,
+    Cancelled,
+}
+
+#[account]
+#[derive(InitSpace)]
+pub struct SettlementRecord {
+    pub pool: Pubkey,
+    pub corridor_borrower: Pubkey,
+    pub destination_account: Pubkey,
+    pub settlement_id: [u8; 32],
     pub amount: u64,
-    pub sequence_id: [u8; 32],
-    pub timestamp: i64,
+    pub timestamp_initiated: i64,
+    pub timeout_deadline: i64,
+    pub status: SettlementStatus,
+    pub offchain_reference_hash: [u8; 32],
+    pub bump: u8,
+}
+
+// -----------------------------------------------------------------------------
+// EVENTS
+// -----------------------------------------------------------------------------
+
+#[event]
+pub struct PoolInitializedEvent {
+    pub pool: Pubkey,
+    pub corridor_id: String,
+    pub credit_limit: u64,
+    pub clearing_authority: Pubkey,
 }
 
 #[event]
-pub struct FacilityRepaidEvent {
-    pub facility: Pubkey,
+pub struct LiquidityDepositedEvent {
+    pub pool: Pubkey,
+    pub funder: Pubkey,
+    pub amount: u64,
+}
+
+#[event]
+pub struct SettlementInitiatedEvent {
+    pub settlement_id: [u8; 32],
+    pub pool: Pubkey,
     pub borrower: Pubkey,
-    pub interest_paid: u64,
-    pub principal_paid: u64,
-    pub remaining_principal: u64,
-    pub remaining_interest: u64,
-    pub timestamp: i64,
+    pub amount: u64,
+    pub deadline: i64,
 }
 
 #[event]
-pub struct ProtocolPauseUpdatedEvent {
-    pub is_paused: bool,
-    pub admin: Pubkey,
-    pub timestamp: i64,
+pub struct SettlementFinalizedEvent {
+    pub settlement_id: [u8; 32],
+    pub pool: Pubkey,
+    pub amount: u64,
+    pub offchain_reference_hash: [u8; 32],
 }
+
+#[event]
+pub struct CreditRepaidEvent {
+    pub pool: Pubkey,
+    pub payer: Pubkey,
+    pub amount: u64,
+    pub current_borrowed: u64,
+}
+
+#[event]
+pub struct SettlementCancelledEvent {
+    pub settlement_id: [u8; 32],
+    pub pool: Pubkey,
+    pub reclaimed_amount: u64,
+}
+
+// -----------------------------------------------------------------------------
+// ERROR CODES
+// -----------------------------------------------------------------------------
 
 #[error_code]
 pub enum ArfError {
-    #[msg("Administrative fee exceeds maximum protocol cap.")]
-    FeeExceedsCap,
+    #[msg("Corridor ID string exceeds maximum capacity of 32 bytes.")]
+    CorridorIdTooLong,
     #[msg("Credit limit must be strictly greater than zero.")]
-    ZeroCreditLimit,
-    #[msg("Configured interest rate APR exceeds maximum ceiling.")]
-    InterestRateExceedsCap,
-    #[msg("Protocol is currently paused by risk admins.")]
-    ProtocolPaused,
-    #[msg("Requested settlement amount is invalid.")]
+    InvalidCreditLimit,
+    #[msg("Settlement timeout must be at least 60 seconds.")]
+    InvalidTimeout,
+    #[msg("Transfer amount must be strictly greater than zero.")]
     InvalidAmount,
-    #[msg("Credit facility is inactive or suspended.")]
-    FacilityInactive,
-    #[msg("Arithmetic overflow occurred during settlement computation.")]
+    #[msg("Corporate credit pool is currently frozen.")]
+    PoolFrozen,
+    #[msg("Arithmetic overflow in credit balance calculations.")]
     MathOverflow,
-    #[msg("Settlement request exceeds authorized dynamic credit ceiling.")]
+    #[msg("Requested settlement amount exceeds available corridor credit limit.")]
     CreditLimitExceeded,
-    #[msg("Supplied token mint does not match treasury corridor specification.")]
+    #[msg("Settlement record is not in Pending status.")]
+    InvalidSettlementStatus,
+    #[msg("Supplied settlement identifier does not match registered record.")]
+    MismatchedSettlementId,
+    #[msg("Settlement period has expired.")]
+    SettlementExpired,
+    #[msg("Unauthorized clearing authority signature.")]
+    UnauthorizedClearing,
+    #[msg("Mismatched destination token account.")]
+    InvalidDestination,
+    #[msg("Settlement deadline has not passed yet.")]
+    SettlementNotExpired,
+    #[msg("Token account mint does not match corridor pool configuration.")]
     InvalidMint,
-    #[msg("Signer is not authorized as protocol admin.")]
-    UnauthorizedAdmin,
-    #[msg("Signer is not authorized borrower for this facility.")]
-    UnauthorizedBorrower,
-    #[msg("Invalid timestamp delta calculation.")]
-    InvalidTimestamp,
-    #[msg("No principal or interest outstanding to repay.")]
-    NoDebtToRepay,
+    #[msg("Account does not match expected token owner.")]
+    InvalidOwner,
 }

@@ -1,0 +1,8 @@
+100% production-ready. 100% open source.
+
+Turnkey Docker setup, Anchor test suite with full coverage, and institutional CLI tools ready for immediate enterprise integration.
+
+Check out the code & join the future of cross-border treasury:
+ github.com/arfflow/solana-settlement-engine
+
+cc: @ArfOfficial @SuperteamTR @solana #SuperteamTR #SolanaHackathon

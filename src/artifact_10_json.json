@@ -1,0 +1,8 @@
+{
+  "status": "healthy",
+  "programId": "Arf1111111111111111111111111111111111111111",
+  "solanaSlot": 268921820,
+  "corridorsActive": ["EUR-TRY", "USD-TRY", "AED-TRY"],
+  "liquidityUtilizationBps": 3200,
+  "uptimeSeconds": 86400
+}

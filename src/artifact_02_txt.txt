@@ -1,0 +1,15 @@
++-----------------------------------------------------------------------------------+
+|                            ARFFLOW INSTITUTIONAL TOPOLOGY                         |
++-----------------------------------------------------------------------------------+
+|  [ Licensed FinTech ERP ]                                                         |
+|         |                                                                         |
+|         v (REST/gRPC Batch Orders)                                                |
+|  [ ArfFlow Relayer Service ] <-------------------> [ Solana RPC (Jito / Triton) ] |
+|         |                                                      |                  |
+|         +---> [ Resend API (audit@arf.one) ]                   | (Anchor State)   |
+|         |                                                      v                  |
+|         +---> [ Slack Webhook (#treasury-ops) ]     [ ArfFlow On-Chain Program ]  |
+|                                                     - LiquidityPool PDA           |
+|                                                     - CreditLine PDA              |
+|                                                     - SettlementEscrow PDA        |
++-----------------------------------------------------------------------------------+

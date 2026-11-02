@@ -1,0 +1,21 @@
+1/4 🌍 Cross-border remittance operators are trapped by billions in idle pre-funded accounts. 
+
+In collaboration with @arf_one & @SuperteamTR, we built **Arf-Flow**: An institutional RWA revolving liquidity & cross-border credit engine built on @solana. ⚡️
+
+Here is how we solve the nostro/vostro crisis: 👇
+
+2/4 🏦 With Arf-Flow, licensed MSBs access programmatic credit lines backed by institutional underwriters.
+Features:
+- Continuous per-second compound interest math
+- Sub-second atomic drawdowns via SPL PDA vaults
+- Multi-sig risk controls & freeze gates
+
+3/4 🛠 Enterprise-ready out of the box:
+- Zero manual reconciliation: Webhook events trigger real-time Slack risk monitors
+- Automated verifiable PDF/HTML audit receipts delivered via @resend
+- 100% test coverage with turnkey Docker deployment.
+
+4/4 🇹🇷 Empowering the next generation of financial infrastructure between Türkiye and global remittance corridors on the highest throughput network in Web3.
+
+Check out our open-source repo & live devnet demo! 🚀
+#Solana #SuperteamTurkey #Arf #Fintech #RWA

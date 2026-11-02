@@ -1,0 +1,6 @@
+Under the hood of ArfFlow:
+⚡️ Anchor PDA Credit Facilities with dynamic risk limits
+⏱️ Sub-second deterministic interest computation ($2.53e-10/sec APR)
+📫 Off-chain enterprise relayer triggering local fiat clearing + instant @resend audit notices & Slack webhooks
+
+Institutional scale meets Solana speed.

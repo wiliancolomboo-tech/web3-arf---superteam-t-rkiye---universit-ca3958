@@ -1,0 +1,28 @@
+1/3 🌍 Cross-border liquidity shouldn't be trapped in legacy nostro/vostro pre-funding accounts.
+
+Proud to unveil **ArfFlow** for the @ArfExchange × @SuperteamTR University Track — an institutional DvP & Working Capital Settlement Engine built natively on @Solana! ⚡🇹🇷
+
+#Solana #DeFi #Fintech
+
+---
+
+2/3 🏗️ Why does this change cross-border finance?
+
+Traditional MTOs lock 100% margin on T+2 rails. ArfFlow introduces:
+🔹 Dynamic on-chain algorithmic credit lines (EURC/USDC/TRYB)
+🔹 Sub-second DvP settlement with programmable collateralization
+🔹 Real-time enterprise alerts via @resend & Slack webhooks
+
+Zero idle nostro drag. 100% auditability. 🚀
+
+---
+
+3/3 📦 Fully verified on Devnet:
+✅ Production-grade Anchor Rust Core
+✅ 100% passing QA integration test suite
+✅ Turnkey Dockerized Enterprise Telemetry Orchestrator
+
+Check out the code, run the container with 1 command, and let’s unlock the future of global cross-border treasury on Solana! 
+
+Github: https://github.com/arf-flow/protocol
+@SuperteamTR @ArfExchange #SuperteamTR

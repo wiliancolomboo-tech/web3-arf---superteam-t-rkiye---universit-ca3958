@@ -1,0 +1,4 @@
+SOLANA_RPC_URL=https://api.devnet.solana.com
+RESEND_API_KEY=re_123456789abcdef
+TREASURY_WEBHOOK_URL=https://api.example.com/webhooks/alerts/placeholder
+AUDIT_EMAIL=settlements@arf.one

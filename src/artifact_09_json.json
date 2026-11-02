@@ -1,9 +1,7 @@
 {
-  "status": "UP",
-  "service": "arf-settlement-velocity-engine",
-  "solana_cluster": "devnet",
-  "current_slot": 298410291,
-  "resend_dispatcher": "HEALTHY",
-  "slack_dispatcher": "CONNECTED",
-  "uptime_seconds": 86400
+  "status": "healthy",
+  "protocol": "ArfPulse v1.0.0",
+  "solanaSlot": 268491024,
+  "poolVaultAvailable": 950000000000,
+  "timestamp": 1714857600
 }

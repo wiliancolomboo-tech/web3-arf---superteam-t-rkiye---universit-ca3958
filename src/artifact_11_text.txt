@@ -1,0 +1,5 @@
+How ArfFlow works under the hood:
+⚡ Atomic ~400ms corridor drawdowns via deterministic Anchor PDAs
+📈 Sub-second continuous interest accruals
+🛡️ Enterprise risk gates with automated waterfall sweeps
+📧 Real-time cryptographically signed receipts via @resend & Slack ops (2/3)

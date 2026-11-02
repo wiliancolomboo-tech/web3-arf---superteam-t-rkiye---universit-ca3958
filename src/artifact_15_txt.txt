@@ -1,0 +1,5 @@
+Cross-border payments shouldn't trap $4T in idle Nostro accounts. 
+
+In partnership with @ArfExchange & @SuperteamTR, we built ArfFlow: institutional credit facilities & sub-second settlement on @solana.
+
+0-day pre-funding. Real-time DvP. Per-second compound amortization. 🧵👇

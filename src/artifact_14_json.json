@@ -1,0 +1,21 @@
+{
+  "name": "arf-enterprise-relayer",
+  "version": "1.0.0",
+  "description": "ArfFlow Enterprise Telemetry & Banking Integration Service",
+  "main": "relayer.ts",
+  "scripts": {
+    "start": "ts-node relayer.ts",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.30.1",
+    "@solana/web3.js": "^1.95.8",
+    "axios": "^1.7.9",
+    "dotenv": "^16.4.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.2"
+  }
+}

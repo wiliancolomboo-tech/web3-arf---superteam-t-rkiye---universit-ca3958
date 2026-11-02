@@ -1,0 +1,21 @@
+version: "3.8"
+
+services:
+  arf-orchestrator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      - SOLANA_RPC_URL=https://api.devnet.solana.com
+      - PROGRAM_ID=ArfPuLse11111111111111111111111111111111111
+      - KEEPER_KEYPAIR_JSON=[1,2,3...your_keypair_bytes]
+      - SLACK_WEBHOOK_URL=https://api.example.com/webhooks/alerts/placeholder
+      - RESEND_API_KEY=re_enterprise_test_key_12345
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 3

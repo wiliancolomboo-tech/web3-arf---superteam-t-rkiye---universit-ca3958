@@ -1,0 +1,14 @@
++----------------------------------------------------------------------------------------------------+
+|                                    OPERATIONAL DISASTER RUNBOOK                                    |
++-------------------+--------------------------------------------+-----------------------------------+
+| Incident Scenario | Immediate Triage Step                      | Cryptographic Command             |
++-------------------+--------------------------------------------+-----------------------------------+
+| Oracle Desync /   | Execute program freeze toggle from multisig| anchor run admin:freeze-pool      |
+| Extreme Volatility| Squads vault to halt lending drawdowns     |                                   |
++-------------------+--------------------------------------------+-----------------------------------+
+| MSB Corridor      | Revoke borrower active status PDA          | anchor run admin:suspend-borrower |
+| Delinquency       | Accrue all terminal debt and sweep yields  |                                   |
++-------------------+--------------------------------------------+-----------------------------------+
+| Relayer Node      | Container auto-heals via Docker Swarm;     | docker-compose restart            |
+| Connection Loss   | nonces protect against re-execution        |                                   |
++-------------------+--------------------------------------------+-----------------------------------+
