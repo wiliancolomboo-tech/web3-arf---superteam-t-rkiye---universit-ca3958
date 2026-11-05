@@ -1,6 +1,6 @@
 PORT=8080
 SOLANA_RPC_URL=https://api.devnet.solana.com
 PROGRAM_ID=ArfSettLer111111111111111111111111111111111
-RESEND_API_KEY=re_live_enterpriseKeyHere
+RESEND_API_KEY=re_test_000000000000000000000000
 TREASURY_EMAIL_RECIPIENT=treasury-ops@partnerbank.com
 SLACK_WEBHOOK_URL=https://api.example.com/webhooks/alerts/placeholder

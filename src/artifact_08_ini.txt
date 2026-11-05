@@ -1,6 +1,6 @@
 SOLANA_RPC_URL=https://api.devnet.solana.com
 PROGRAM_ID=ArfNexuz111111111111111111111111111111111111
-RESEND_API_KEY=re_your_enterprise_resend_key_here
+RESEND_API_KEY=re_test_000000000000000000000000
 RESEND_FROM_EMAIL=settlements@arf.one
 AUDIT_EMAIL=treasury@licensed-msb.com.tr
 SLACK_WEBHOOK_URL=https://api.example.com/webhooks/alerts/placeholder

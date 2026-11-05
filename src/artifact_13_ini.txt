@@ -4,6 +4,6 @@ PROGRAM_ID=Arf1111111111111111111111111111111111111111
 ADMIN_KEYPAIR_PATH=./secrets/id.json
 
 # Enterprise Integration Channels
-RESEND_API_KEY=re_123456789_abcdefghijklmnopqrstuvwxyz
+RESEND_API_KEY=re_test_000000000000000000000000
 SLACK_WEBHOOK_URL=https://api.example.com/webhooks/alerts/placeholder
 ALERT_DISPATCH_EMAIL=cfo-desk@arf.one
